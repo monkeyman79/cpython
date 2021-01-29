@@ -1955,25 +1955,23 @@ class TestActionExtendCapture(ParserTestCase):
     ]
 
 
-PR24259_MERGED = False
-if PR24259_MERGED:
-    class TestActionExtendCapturePositional(ParserTestCase):
-        argument_signatures = [
-            Sig('--load-addr', type=lambda s: int(s, 16)),
-            Sig('--exec-addr', type=lambda s: int(s, 16)),
-            Sig('--replace', action='store_true'),
-            Sig('file', nargs='**', action="extend_capture", capture='*',
-                capture_reset=['load_addr', 'exec_addr'])]
-        failures = ()
-        successes = [
-            ('--replace !BOOT --load-addr 1900 --exec-addr 8023 CALC README',
-            NS(file=[{'file': '!BOOT',  'load_addr': None,   'exec_addr': None,   'replace': True},
-                     {'file': 'CALC',   'load_addr': 0x1900, 'exec_addr': 0x8023, 'replace': True},
-                     {'file': 'README', 'load_addr': None,   'exec_addr': None,   'replace': True}],
-                load_addr=None,
-                exec_addr=None,
-                replace=True))
-        ]
+class TestActionExtendCapturePositional(ParserTestCase):
+    argument_signatures = [
+        Sig('--load-addr', type=lambda s: int(s, 16)),
+        Sig('--exec-addr', type=lambda s: int(s, 16)),
+        Sig('--replace', action='store_true'),
+        Sig('file', nargs='**', action="extend_capture", capture='*',
+            capture_reset=['load_addr', 'exec_addr'])]
+    failures = ()
+    successes = [
+        ('--replace !BOOT --load-addr 1900 --exec-addr 8023 CALC README',
+        NS(file=[{'file': '!BOOT',  'load_addr': None,   'exec_addr': None,   'replace': True},
+                    {'file': 'CALC',   'load_addr': 0x1900, 'exec_addr': 0x8023, 'replace': True},
+                    {'file': 'README', 'load_addr': None,   'exec_addr': None,   'replace': True}],
+            load_addr=None,
+            exec_addr=None,
+            replace=True))
+    ]
 
 
 class TestActionStoreCapture(ParserTestCase):
