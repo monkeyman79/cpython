@@ -82,6 +82,7 @@ __all__ = [
     'REMAINDER',
     'SUPPRESS',
     'ZERO_OR_MORE',
+    'AS_MANY_AS_POSSIBLE'
 ]
 
 
@@ -95,6 +96,7 @@ SUPPRESS = '==SUPPRESS=='
 
 OPTIONAL = '?'
 ZERO_OR_MORE = '*'
+AS_MANY_AS_POSSIBLE = '**'
 ONE_OR_MORE = '+'
 PARSER = 'A...'
 REMAINDER = '...'
@@ -590,7 +592,8 @@ class HelpFormatter(object):
             result = '%s' % get_metavar(1)
         elif action.nargs == OPTIONAL:
             result = '[%s]' % get_metavar(1)
-        elif action.nargs == ZERO_OR_MORE:
+        elif (action.nargs == ZERO_OR_MORE
+                or action.nargs == AS_MANY_AS_POSSIBLE):
             metavar = get_metavar(1)
             if len(metavar) == 2:
                 result = '[%s [%s ...]]' % metavar
@@ -692,7 +695,7 @@ class ArgumentDefaultsHelpFormatter(HelpFormatter):
         help = action.help
         if '%(default)' not in action.help:
             if action.default is not SUPPRESS:
-                defaulting_nargs = [OPTIONAL, ZERO_OR_MORE]
+                defaulting_nargs = [OPTIONAL, ZERO_OR_MORE, AS_MANY_AS_POSSIBLE]
                 if action.option_strings or action.nargs in defaulting_nargs:
                     help += ' (default: %(default)s)'
         return help
@@ -781,6 +784,7 @@ class Action(_AttributeHolder):
                 - N (an integer) consumes N arguments (and produces a list)
                 - '?' consumes zero or one arguments
                 - '*' consumes zero or more arguments (and produces a list)
+                - '**' consumes all remaining positional arguments
                 - '+' consumes one or more arguments (and produces a list)
             Note that the difference between the default and nargs=1 is that
             with the default, a single value will be produced, while with
@@ -1515,7 +1519,8 @@ class _ActionsContainer(object):
 
         # mark positional arguments as required if at least one is
         # always required
-        if kwargs.get('nargs') not in [OPTIONAL, ZERO_OR_MORE]:
+        if kwargs.get('nargs') not in [OPTIONAL, ZERO_OR_MORE,
+                                       AS_MANY_AS_POSSIBLE]:
             kwargs['required'] = True
         if kwargs.get('nargs') == ZERO_OR_MORE and 'default' not in kwargs:
             kwargs['required'] = True
@@ -1540,6 +1545,11 @@ class _ActionsContainer(object):
             option_strings.append(option_string)
             if len(option_string) > 1 and option_string[1] in self.prefix_chars:
                 long_option_strings.append(option_string)
+
+        # nargs='**' is invalid for optionals
+        if kwargs.get('nargs') == AS_MANY_AS_POSSIBLE:
+            msg = _("'nargs=\"**\"' is invalid for optionals")
+            raise TypeError(msg)
 
         # infer destination, '--foo-bar' -> 'foo_bar' and '-x' -> 'x'
         dest = kwargs.pop('dest', None)
@@ -2010,17 +2020,23 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
             match_partial = self._match_arguments_partial
             selected_pattern = arg_strings_pattern[start_index:]
             arg_counts = match_partial(positionals, selected_pattern)
+            action_index = 0
 
             # slice off the appropriate arg strings for each Positional
             # and add the Positional and its args to the list
-            for action, arg_count in zip(positionals, arg_counts):
+            for arg_count in arg_counts:
+                action = positionals[action_index]
                 args = arg_strings[start_index: start_index + arg_count]
                 start_index += arg_count
                 take_action(action, args)
+                # if positional action nargs is '**',
+                # never remove it from actions list
+                if action.nargs != AS_MANY_AS_POSSIBLE:
+                    action_index += 1
 
             # slice off the Positionals that we just parsed and return the
             # index at which the Positionals' string args stopped
-            positionals[:] = positionals[len(arg_counts):]
+            positionals[:] = positionals[action_index:]
             return start_index
 
         # consume Positionals and Optionals alternately, until we have
@@ -2290,7 +2306,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
             nargs_pattern = '(-*A?-*)'
 
         # allow zero or more arguments
-        elif nargs == ZERO_OR_MORE:
+        elif nargs == ZERO_OR_MORE or nargs == AS_MANY_AS_POSSIBLE:
             nargs_pattern = '(-*[A-]*)'
 
         # allow one or more arguments
