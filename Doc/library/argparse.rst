@@ -2363,7 +2363,11 @@ Custom help format
 .. class:: CustomHelpFormat(indent_increment=2, max_help_position=24, \
                             width=None, raw_description=False, \
                             raw_text=False, arg_defaults=False, \
-                            metavar_type=False, **kwargs)
+                            metavar_type=False, \
+                            gnu_style_long_options=False, \
+                            flexi=False, \
+                            formatter_class=CustomizableHelpFormatter, \
+                            **kwargs)
 
    A :class:`CustomHelpFormat` object can be passed as formatter_class_ parameter
    to the :class:`ArgumentParser` constructor instead of a formatter class.
@@ -2427,6 +2431,11 @@ Custom help format
      :class:`GnuStyleLongOptionsHelpFormatter`
 
    * flexi - Setting this attribute to ``True`` enables :class:`FlexiHelpFormatter`
+
+   * formatter_class - Formatter class created by the :class:`CustomHelpFormat`
+     object. Existing formatting options can be further refined by deriving a new
+     class from existing :class:`CustomizableHelpFormatter` and passing the new
+     class type as `formatter_class` attribute.
 
    Unknown keyword arguments passed to the class constructor are ignored.
 

@@ -76,6 +76,7 @@ __all__ = [
     'FlexiHelpFormatter',
     'MetavarTypeHelpFormatter',
     'GnuStyleLongOptionsHelpFormatter',
+    'CustomizableHelpFormatter',
     'CustomHelpFormat',
     'Namespace',
     'Action',
@@ -819,7 +820,7 @@ class GnuStyleLongOptionsHelpFormatter(HelpFormatter):
         return '%s %s' % (option_string, args_string)
 
 
-class _CustomizableHelpFormatter(FlexiHelpFormatter,
+class CustomizableHelpFormatter(FlexiHelpFormatter,
                                 RawTextHelpFormatter,
                                 ArgumentDefaultsHelpFormatter,
                                 MetavarTypeHelpFormatter,
@@ -828,7 +829,7 @@ class _CustomizableHelpFormatter(FlexiHelpFormatter,
     def __init__(self, raw_description, raw_text,
             arg_defaults, metavar_type, gnu_style_long_options,
             flexi, **kwargs):
-        super(_CustomizableHelpFormatter, self).__init__(**kwargs)
+        super(CustomizableHelpFormatter, self).__init__(**kwargs)
         if not flexi:
             self.disable_flexi()
             if not raw_description:
@@ -880,6 +881,7 @@ class CustomHelpFormat:
                  metavar_type=False,
                  gnu_style_long_options=False,
                  flexi=False,
+                 formatter_class=CustomizableHelpFormatter,
                  **kwargs):
         self.indent_increment = indent_increment
         self.max_help_position = max_help_position
@@ -890,10 +892,11 @@ class CustomHelpFormat:
         self.metavar_type = metavar_type
         self.gnu_style_long_options = gnu_style_long_options
         self.flexi = flexi
+        self.formatter_class = formatter_class
 
 
     def __call__(self, prog):
-        return _CustomizableHelpFormatter(
+        return self.formatter_class(
             prog=prog,
             indent_increment=self.indent_increment,
             max_help_position=self.max_help_position,
